@@ -123,3 +123,188 @@ mainfoods_df.to_csv('/Users/lucasvanderhorst/FoodDashboard/MainFoods_df.csv')
   
 </details>
 
+### Data loading into cloud SQL database
+While building the dashboard and thinking about deployment, I realized I could not have the program access my local computer, from where I was previously loading the csv into a dataframe. Thus came the need to load the csv file into the cloud and have the program access that instead. After studying the available providers for this and the web deployment, I chose Google Cloud for the services included in the free tier. So, after creating an account and setting the database with MySQL to be loaded, I wrote the code below and stored the dataframe into a Google Cloud SQL database.
+<details>
+<summary>Click to see the code snippet</summary>
+
+```python
+#This sript is to be run once to create and fill a table in Google Cloud MySQL database
+
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+import os
+import pandas as pd
+
+# Your Google Cloud SQL database credentials
+connection_name = 'amiable-parser-411713:europe-west9:foodnutritionalvaluesdatabase'
+database_name = 'foods'
+user = 'root'
+password = '***'
+
+key_path = '***'  # Replace with the actual path
+# Set the GOOGLE_APPLICATION_CREDENTIALS environment variable
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+
+
+connector = Connector()
+def getconn():
+    conn = connector.connect(
+        connection_name,
+        "pymysql",
+        user=user,
+        password=password,
+        db=database_name)
+    
+    return conn
+
+# create connection pool
+pool = sqlalchemy.create_engine(
+    "mysql+pymysql://",
+    creator=getconn)
+
+def CreateFillFoodTable(connection):
+    food_df=pd.read_csv('Food_df.csv')
+    food_df=food_df.loc[:, ~food_df.columns.str.contains('unit')]
+
+    connection.execute(sqlalchemy.text('DROP TABLE IF EXISTS FoodsTable;'))
+
+    sqlquery1='''
+    CREATE TABLE IF NOT EXISTS FoodsTable (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    description VARCHAR(255) NOT NULL,\n'''
+
+    transtable=str.maketrans(',-', '__', ' ')
+    attributes=list(food_df.columns[2:])
+    attributes=[i.translate(transtable) for i in attributes]
+
+    for attribute in attributes[1:]:
+        if attribute==attributes[-1]:
+            sqlquery1+=f'''  {attribute} FLOAT NOT NULL'''
+
+        else:
+            sqlquery1+=f'''  {attribute} FLOAT NOT NULL,\n'''
+
+    sqlquery1+=');\n\n'
+    connection.execute(sqlalchemy.text(sqlquery1))
+
+    queryattributes=', '.join(attributes)
+    for i in range(len(food_df)):
+        row=list(food_df.iloc[i][2:])
+        insertrowquery=f'INSERT INTO FoodsTable ({queryattributes}) VALUES ('
+        insertrowquery+=', '.join([f'''"{str(value).replace('"', '')}"''' if i==0 else str(value) for i, value in enumerate(row)])
+        insertrowquery+=''');\n'''
+        connection.execute(sqlalchemy.text(insertrowquery))
+
+    result=connection.execute(sqlalchemy.text('SELECT * FROM FoodsTable LIMIT 50'))
+    for row in result:
+        print(row)
+    
+    # connection.execute(sqlalchemy.text('DROP TABLE IF EXISTS FoodsTable;'))
+    
+    # commit transaction (SQLAlchemy v2.X.X is commit as you go)
+    connection.commit()
+
+with pool.connect() as db_conn:
+    CreateFillFoodTable(db_conn)
+    
+    food_dforiginal=pd.read_csv('Food_df.csv')
+
+    food_df=pd.read_sql('FoodsTable', db_conn)
+    food_df.drop('id', axis='columns', inplace=True)
+    print(food_df.head(10))
+    print(food_dforiginal.head(10))
+
+connector.close()
+```
+  
+</details>
+
+### Building the Dash app
+Finally, it was time to build the dashboard. First, I had to load the data from the SQL database in Google Cloud and put it into a pandas dataframe, as well as define some main colors and formating functions.
+<details>
+<summary>Click to see the code snippet</summary>
+
+```python
+# ----- Importing Packages -----
+
+import pandas as pd
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_rows', None)
+import random as rd
+# import warnings
+# warnings.filterwarnings("ignore")
+
+import dash
+from dash import dcc, html, ALL
+from dash.dependencies import Input, Output, State
+import plotly.express as px
+import dash_mantine_components as dmc
+
+# ---
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+# import os
+
+
+def OpenGCloudMySQLConnection():
+
+    connection_name = 'amiable-parser-411713:europe-west9:foodnutritionalvaluesdatabase'
+    database_name = 'foods'
+    user = 'root'
+    password = '***'
+
+    # key_path = '***'  # Replace with the actual path
+    # # Set the GOOGLE_APPLICATION_CREDENTIALS environment variable
+    # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+
+    connector = Connector()
+    def getconn():
+        conn = connector.connect(
+            connection_name,
+            "pymysql",
+            user=user,
+            password=password,
+            db=database_name)
+        
+        return conn
+
+    # create connection pool
+    pool = sqlalchemy.create_engine(
+        "mysql+pymysql://",
+        creator=getconn)
+    
+    return pool.connect(), connector
+
+poolconnect, connector=OpenGCloudMySQLConnection()
+with poolconnect as db_conn:    
+    food_df=pd.read_sql('FoodsTable', db_conn)
+
+food_df.drop('id', axis='columns', inplace=True)
+food_df.rename(columns={'Fats_monounsaturated': 'Fats, monounsaturated', 'Fats_polyunsaturated': 'Fats, polyunsaturated',
+                'Fats_saturated': 'Fats, saturated', 'VitaminB_12': 'Vitamin B-12', 'VitaminB_6': 'Vitamin B-6',
+                'VitaminC': 'Vitamin C', 'VitaminE': 'Vitamin E', 'VitaminK': 'Vitamin K'}, inplace=True) 
+
+connector.close()
+# ---
+```
+```python
+colorpalette=['rgb(229, 255, 204)', 'rgb(255, 255, 204)',
+              'rgb(255, 229, 204)', 'rgb(255, 204, 204)', 'rgb(229, 204, 255)', 'rgb(204, 229, 255)']
+textcolor='rgb(51, 51, 51)'
+backgroundcolor='rgb(250, 250, 245)'
+
+maxlabellength=18
+truncatelabels=lambda x: x[:maxlabellength] + '...' if len(x) > maxlabellength else x
+
+breaklength=25
+breaklabels=lambda description: '-<br>'.join([description[i:i+breaklength] for i in range(0, len(description), breaklength)])
+
+superscript=lambda text: text.translate(str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹"))
+
+attributes=list(food_df.columns)[1:]
+DRVattributes=[2000, 56, 275, 37, 16, None, None, 325, 11, 0.0024, 1.3, 80, 15, 0.1] #From various sources. Broad reference values. In same units as their corresponding attributes
+
+```
+  
+</details>
