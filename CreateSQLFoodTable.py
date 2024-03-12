@@ -9,9 +9,9 @@ import pandas as pd
 connection_name = 'amiable-parser-411713:us-central1:foodnutritionalvaluesdatabase'
 database_name = 'foods'
 user = 'root'
-password = ':Tk)Q>dZLaIRX^:5'
+password = '***'
 
-key_path = '/Users/lucasvanderhorst/Downloads/amiable-parser-411713-a74922a346c3.json'  # Replace with the actual path
+key_path = '***'  # Replace with the actual path
 # Set the GOOGLE_APPLICATION_CREDENTIALS environment variable
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
 
