@@ -1095,6 +1095,11 @@ At last, the app was deployed and anyone could access it using the provided link
 <details>
 <summary>Click to see images of the web app</summary>
 
-<img scr="" />
+<img src="images/Dash-NutritionalExplorer.png" />
+<img src="images/Dash-ChosenFoods.png" />
+<img src="images/Dash-NutritionalAmounts.png" />
+<img src="images/Dash-NutritionalMacros.png" />
+
+
   
 </details>
