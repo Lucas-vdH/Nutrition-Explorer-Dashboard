@@ -221,7 +221,7 @@ connector.close()
 </details>
 
 ### Building the Dash app
-Finally, it was time to build the dashboard. First, I had to load the data from the SQL database in Google Cloud and put it into a pandas dataframe, as well as define some main colors and formating functions.
+Following, it was time to build the dashboard. First, I had to load the data from the SQL database in Google Cloud and put it into a pandas dataframe, as well as define some main colors and formating functions.
 
 <details>
 <summary>Click to see the code snippet</summary>
@@ -1066,6 +1066,28 @@ if __name__ == '__main__':
     app.run_server(debug=False, host="0.0.0.0", port=8080)
 ```
 </details>
+
+### Web app deployment
+Finally, onto the deployment. To host the dash app on the cloud, I used Google Cloud Run, where after setting it up, writting a Dockerfile and running some Google Cloud commands, I got the app deployed to the web and recieved a working link.
+<details>
+<summary>Click to see the code snippet</summary>
+
+```dockerfile
+FROM python:3.11
+
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+COPY . ./
+
+RUN pip install -r requirements.txt
+
+EXPOSE 8080
+
+CMD python3 app.py
+```
+  
+</details>
+The requirements.txt file from the code above can be found in the repository.
 
 ### Results
 At last, the app was deployed and anyone could access it using the provided link. Sadly, the free trial with Google Cloud ended and the link is no longer available. Nonetheless, I leave some images below showing the visualizations and some of the features.
