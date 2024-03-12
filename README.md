@@ -1067,3 +1067,12 @@ if __name__ == '__main__':
 ```
 </details>
 
+### Results
+At last, the app was deployed and anyone could access it using the provided link. Sadly, the free trial with Google Cloud ended and the link is no longer available. Nonetheless, I leave some images below showing the visualizations and some of the features.
+
+<details>
+<summary>Click to see images of the web app</summary>
+
+<img scr="" />
+  
+</details>
