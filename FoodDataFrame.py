@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore")
 # ----- Get request with API and building DataFrame -----
 #API's documentation in https://app.swaggerhub.com/apis/fdcnal/food-data_central_api/1.0.1#/
 if __name__ == '__main__':
-    apikey='e1uI4TlljYic1XC2gNzC7PhIWqEwsxcAUTdE05Px'
+    apikey='***'
     food_list=[]
     maxpagenumber=30
     for pagenumber in range(1, maxpagenumber+1):
