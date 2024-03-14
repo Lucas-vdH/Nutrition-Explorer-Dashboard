@@ -1,4 +1,4 @@
-# Nutrition Tracker Dashboard
+# Nutrition Explorer Dashboard
 With the aim of learning how to build a data dashboard with ```Plotly Dash``` and deploy it on the cloud and having some interest in sport science, I decided to build a nutritional dashboard. In it, I wanted the user to select all the food items and amounts consumed in a day and the web page would load different visualizations showcasing energy, macros, mineral and vitamin consumption. Additionally, I wanted another, more exploratory, tool for the user, to find the richest foods in a certain nutritional attribute (most proteic foods, for example), along with some control over other features. Lastly, there should be a feedback button, that would store the user's message into an SQL database. In what follows below you may find an overview of the build of the project and the code snippets.
 
 ### Data extraction
